@@ -1,0 +1,37 @@
+name: Build Windows exe
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install packages
+        run: pip install -r requirements.txt
+
+      - name: Download platform-tools (adb)
+        shell: pwsh
+        run: |
+          Invoke-WebRequest https://dl.google.com/android/repository/platform-tools-latest-windows.zip -OutFile pt.zip
+          Expand-Archive pt.zip -DestinationPath .
+
+      - name: Build exe (adb packed inside)
+        run: pyinstaller --onefile --noconsole --name BangBangADB --add-data "platform-tools;platform-tools" --collect-all tkinterdnd2 --collect-all pyaxmlparser --collect-all zeroconf --collect-all qrcode app.py
+
+      - name: Zip
+        shell: pwsh
+        run: Compress-Archive -Path dist\BangBangADB.exe -DestinationPath BangBangADB-windows.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BangBangADB-windows
+          path: BangBangADB-windows.zip
