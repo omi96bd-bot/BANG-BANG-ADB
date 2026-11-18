@@ -1,0 +1,10 @@
+# The app itself needs only the Python standard library.
+# Everything below is OPTIONAL (the app starts and works without them).
+tkinterdnd2      # drag and drop of APK files
+pyaxmlparser     # read APK package name / version
+zeroconf         # QR pairing (mDNS)
+qrcode           # QR pairing (draw the QR code)
+Pillow           # QR pairing (show the QR image)
+
+# Only needed to build the exe:
+pyinstaller
