@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BANG BANG ADB</title>
+<style>
+:root{--bg:#eef2f6;--panel:#fff;--side:#101c2c;--side-t:#9fb0c6;--ink:#15212f;--mute:#667689;--line:#dde4ec;--acc:#2f6bff;--acc2:#1e4fd6;--ok:#12a150;--bad:#d93a3a;--warn:#c47a00;--chip:#e8efff;--okbg:#e3f6ea;--badbg:#fde8e8;--shadow:0 6px 24px rgba(16,28,44,.08);color-scheme:light}
+:root[data-theme="dark"]{--bg:#0b121c;--panel:#142030;--side:#070d15;--side-t:#8ea1ba;--ink:#e6edf6;--mute:#8da0b8;--line:#22344a;--acc:#4c82ff;--acc2:#3a6be0;--ok:#2fc178;--bad:#ff6b6b;--warn:#e0a030;--chip:#1b2e52;--okbg:#12301f;--badbg:#3a1b1f;--shadow:0 6px 24px rgba(0,0,0,.4);color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "Segoe UI","Nirmala UI",system-ui,sans-serif;overflow:hidden}
+body.noanim *{animation:none!important;transition:none!important}
+.app{display:grid;grid-template-columns:206px 1fr;height:100vh}
+aside{background:var(--side);color:var(--side-t);padding:18px 12px;display:flex;flex-direction:column;gap:4px}
+.logo{display:flex;align-items:center;gap:10px;color:#fff;font-weight:800;font-size:15px;padding:4px 8px 18px;letter-spacing:.3px}
+.logo i{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#2f6bff,#22d3a6);display:grid;place-items:center;font-style:normal;animation:pop 2.4s ease-in-out infinite}
+@keyframes pop{0%,100%{transform:rotate(0)}50%{transform:rotate(-8deg) scale(1.06)}}
+nav button{all:unset;cursor:pointer;display:flex;gap:10px;align-items:center;width:100%;padding:10px 12px;border-radius:10px;transition:.2s;position:relative;box-sizing:border-box}
+nav button:hover{background:rgba(255,255,255,.07);color:#fff}
+nav button.on{background:rgba(47,107,255,.22);color:#fff}
+nav button.on::before{content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:4px;border-radius:0 4px 4px 0;background:var(--acc)}
+.sp{flex:1}
+.sidebtn{cursor:pointer;padding:8px 12px;border-radius:10px;font-size:13px}.sidebtn:hover{background:rgba(255,255,255,.07);color:#fff}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#22d3a6;margin-right:8px;animation:pulse 1.6s infinite}
+.dot.off{background:var(--bad);animation:none}.dot.idle{background:var(--warn);animation:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,211,166,.6)}100%{box-shadow:0 0 0 9px rgba(34,211,166,0)}}
+main{padding:0;min-width:0;overflow:hidden;position:relative}
+.view{display:none;height:100%;overflow:auto;padding:22px 26px;animation:in .35s ease}
+.view.on{display:block}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.top h1{font-size:20px;margin:0;flex:1}
+.btn{all:unset;cursor:pointer;padding:9px 16px;border-radius:10px;background:var(--panel);border:1px solid var(--line);font-weight:600;transition:.18s;position:relative;box-sizing:border-box;white-space:nowrap}
+.btn:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}.btn.pri:hover{background:var(--acc2)}
+.btn.dng{color:var(--bad)}
+.btn.go{padding:13px 34px;font-size:16px}
+.btn.sm{padding:5px 12px;font-size:13px}
+.btn[disabled],.btn.dis{opacity:.5;pointer-events:none}
+.btn:focus-visible,.tg:focus-visible,.cardm:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.drop{border:2px dashed var(--acc);border-radius:14px;padding:20px;text-align:center;cursor:pointer;background:var(--chip);transition:.2s}
+.drop:hover,.drop.drag{transform:scale(1.005);border-color:var(--acc2)}
+.drop b{font-size:15px}.drop small{display:block;color:var(--mute)}
+.drop .ic{font-size:24px;display:inline-block;animation:bob 1.8s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-5px)}}
+.apk{display:flex;align-items:center;gap:12px;padding:10px 14px}
+.apk .ib{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#22d3a6,#2f6bff);display:grid;place-items:center;color:#fff;font-weight:800;font-size:12px}
+.apk .x{margin-left:auto;cursor:pointer;color:var(--mute);padding:4px 8px;border-radius:8px}.apk .x:hover{background:var(--chip);color:var(--bad)}
+.apk small,.sub{color:var(--mute);font-size:12px}
+.tools{display:flex;gap:8px;align-items:center;margin:16px 0 10px;flex-wrap:wrap}
+.seg{display:inline-flex;background:var(--line);border-radius:10px;padding:3px;gap:2px}
+.seg button{all:unset;cursor:pointer;padding:5px 12px;border-radius:7px;font-weight:600;color:var(--mute);background:var(--panel)}
+.seg button.on{background:var(--acc);color:#fff}
+.phead,.phone{display:grid;grid-template-columns:30px minmax(150px,2fr) 90px 140px 130px minmax(180px,3fr);gap:10px;align-items:center;padding:10px 16px}
+.phead{background:var(--chip);font-size:12px;font-weight:700;color:var(--mute);border-radius:14px 14px 0 0}
+.phone{border-top:1px solid var(--line);cursor:pointer;transition:background .15s}.phone:hover{background:color-mix(in srgb,var(--chip) 50%,var(--panel))}
+.phone.new{animation:in .4s ease both}
+.nm{font-weight:700}
+.cb{width:20px;height:20px;border-radius:6px;border:2px solid var(--line);display:grid;place-items:center;color:#fff;font-size:13px;transition:.15s;flex:none}
+.cb.on{background:var(--acc);border-color:var(--acc)}.cb.x{border:0;color:var(--mute)}
+.tag{font-size:11px;padding:2px 8px;border-radius:99px;background:var(--chip);color:var(--acc);font-weight:700;display:inline-block}.tag.w{background:var(--okbg);color:var(--ok)}
+.st{font-weight:600;font-size:13px;word-break:break-word}
+.sp-i{display:inline-block;width:12px;height:12px;border:2px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:rot .7s linear infinite;margin-right:6px;vertical-align:-1px}
+@keyframes rot{to{transform:rotate(360deg)}}
+.mini{height:4px;border-radius:9px;background:var(--line);margin-top:5px;overflow:hidden}
+.mini i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--acc),#22d3a6,var(--acc));background-size:200% 100%;animation:sh 1s linear infinite}
+.bar{height:8px;border-radius:9px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--acc);border-radius:9px;transition:width .4s ease,background .3s}
+.bar.run i{background-image:linear-gradient(90deg,var(--acc),#22d3a6,var(--acc));background-size:200% 100%;animation:sh 1s linear infinite}
+.bar.done i{background:var(--ok)}
+@keyframes sh{to{background-position:-200% 0}}
+.runbar{display:flex;gap:14px;align-items:center;margin-top:14px;flex-wrap:wrap}.runbar .grow{flex:1;min-width:200px}
+.msg{margin-top:12px;padding:12px 16px;border-radius:12px;background:var(--chip);color:var(--acc);font-weight:600;transition:background .35s,color .35s}
+.msg.ok{background:var(--ok);color:#fff;font-size:15px}.msg.bad{background:var(--badbg);color:var(--bad)}
+.res{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.detail{margin-top:8px;color:var(--bad);font-size:13px;display:flex;gap:10px;align-items:center}
+details{margin-top:14px}
+summary{cursor:pointer;font-weight:700;padding:12px 16px;list-style:none}
+summary::before{content:"▸ ";display:inline-block;transition:.2s}details[open] summary::before{transform:rotate(90deg)}
+.opts{padding:4px 16px 8px;display:flex;gap:10px 24px;flex-wrap:wrap;align-items:center}
+.opt{display:flex;align-items:center;gap:8px}
+.tg{all:unset;cursor:pointer;width:42px;height:24px;border-radius:99px;background:var(--line);position:relative;transition:.25s;flex:none}
+.tg::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.25s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.tg.on{background:var(--acc)}.tg.on::after{left:21px}
+input[type=text],input[type=number],input[type=password],select{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;outline:none}
+input:focus,select:focus{border-color:var(--acc)}
+input[type=number]{width:84px}
+code,.mono{font-family:Consolas,monospace;font-size:12px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--line)}.row:last-child{border:0}
+.row p{margin:0;font-weight:600}.row small{color:var(--mute);display:block;font-weight:400;max-width:520px}
+.grp{padding:4px 18px}
+.gt{margin:18px 0 8px;font-size:13px;font-weight:700;color:var(--ink)}
+.al{max-height:calc(100vh - 330px);overflow:auto}
+.al div.it{display:flex;gap:10px;align-items:center;padding:8px 16px;border-top:1px solid var(--line);cursor:pointer}.al div.it:first-child{border:0}.al div.it:hover{background:var(--chip)}
+.term{background:#0c131b;color:#9fb0c6;font:12px/1.7 Consolas,monospace;padding:16px;border-radius:14px;height:calc(100vh - 120px);overflow:auto;white-space:pre-wrap;word-break:break-all}
+.term .ok,.lpb .ok{color:#5fd38d}.term .bad,.lpb .bad{color:#ff7b70}.term .cmd,.lpb .cmd{color:#9aa5b1}
+.wgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.cardm{padding:18px;text-align:center;cursor:pointer;transition:.2s;border:2px solid var(--line)}
+.cardm:hover{transform:translateY(-3px);border-color:var(--acc)}.cardm.on{border-color:var(--acc)}
+.cardm .e{font-size:28px}.cardm b{display:block}.cardm small{color:var(--mute)}
+.crow{display:flex;align-items:center;gap:12px;padding:10px 16px;border-top:1px solid var(--line)}.crow:first-child{border:0}
+.cdot{width:10px;height:10px;border-radius:50%;background:var(--ok);animation:pulse 1.6s infinite;flex:none}.cdot.bad{background:var(--bad);animation:none}
+.step{display:flex;gap:10px;padding:7px 0;color:var(--mute);transition:.3s}
+.step .si{width:22px;height:22px;display:grid;place-items:center;font-weight:700;flex:none}
+.step.info,.step.done,.step.fail,.step.active{color:var(--ink)}.step.active{font-weight:700}
+.step.info .si{color:var(--acc)}.step.done .si{color:var(--ok);animation:tick .4s cubic-bezier(.2,1.6,.4,1)}.step.fail .si{color:var(--bad)}
+.step.active .si{border:2px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:rot .7s linear infinite;width:18px;height:18px;margin:2px}
+@keyframes tick{from{transform:scale(0) rotate(-90deg)}}
+.banner{padding:11px 16px;border-radius:12px;font-weight:700;margin-top:10px;transition:background .3s;white-space:pre-wrap}
+.banner.info{background:var(--chip);color:var(--acc)}.banner.ok{background:var(--okbg);color:var(--ok)}.banner.bad{background:var(--badbg);color:var(--bad)}
+.qr{background:#fff;padding:8px;border-radius:10px;display:inline-block;margin-top:8px}.qr img{display:block;width:220px;height:220px}
+.frm{display:grid;grid-template-columns:auto 1fr auto;gap:8px 10px;align-items:center;margin:8px 0}
+.toast{position:fixed;right:20px;bottom:20px;background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;transform:translateY(90px);opacity:0;transition:.35s;font-weight:600;z-index:30;max-width:420px}
+.toast.on{transform:none;opacity:1}.toast.ok{background:var(--ok);color:#fff}.toast.bad{background:var(--bad);color:#fff}
+.lp{position:fixed;right:20px;bottom:76px;width:min(430px,calc(100vw - 32px));background:#0c131b;color:#9fb0c6;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.35);z-index:20;overflow:hidden;transform:translateY(30px) scale(.96);opacity:0;pointer-events:none;transition:.3s cubic-bezier(.2,1.2,.4,1)}
+.lp.on{transform:none;opacity:1;pointer-events:auto}
+.lph{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#121d2a;color:#e6edf6;font-weight:700;font-size:13px}.lph .t{flex:1}
+.lph button{all:unset;cursor:pointer;padding:2px 8px;border-radius:6px;color:#9fb0c6;font-size:12px}.lph button:hover{background:rgba(255,255,255,.1);color:#fff}
+.lpb{font:11.5px/1.65 Consolas,monospace;padding:10px 12px;height:160px;overflow:auto;white-space:pre-wrap;word-break:break-all;transition:height .25s,padding .25s}
+.lp.min .lpb{height:0;padding:0 12px}
+.live{width:8px;height:8px;border-radius:50%;background:#22d3a6;animation:pulse 1.2s infinite}.lp.fin .live{animation:none;background:#6b7a8c}.lp.bad .live{background:#ff7b70}
+.ov{position:fixed;inset:0;background:rgba(5,10,18,.55);display:none;place-items:center;z-index:40}
+.ov.on{display:grid;animation:in .2s}
+.mod{background:var(--panel);border-radius:16px;padding:22px;width:min(560px,92vw);max-height:86vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.mod h3{margin:0 0 10px}.mod .body{white-space:pre-wrap;color:var(--ink);margin-bottom:14px}.mod .acts{display:flex;gap:8px;justify-content:flex-end}
+.mod ol{padding-left:20px;margin:10px 0}.mod li{margin:6px 0}
+.empty{text-align:center;padding:34px;color:var(--mute)}.empty .e{font-size:30px}
+@media (max-width:900px){.phead{display:none}.phone{grid-template-columns:30px 1fr}.phone>*:nth-child(n+3){grid-column:2}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside>
+ <div class="logo"><i>⚡</i>BANG BANG ADB</div>
+ <nav id="nav">
+  <button class="on" data-v="install">📲 <span data-t="Install">Install</span></button>
+  <button data-v="apps">🧩 <span data-t="Apps">Apps</span></button>
+  <button data-v="conn">📡 <span data-t="Connection">Connection</span></button>
+  <button data-v="log">🧾 <span data-t="Log">Log</span></button>
+  <button data-v="settings">⚙️ <span data-t="Settings">Settings</span></button>
+ </nav>
+ <div class="sp"></div>
+ <div class="sidebtn" id="themebtn">🌓 <span data-t="Theme">Theme</span></div>
+ <div style="padding:6px 12px 10px;font-size:12px"><span class="dot idle" id="sdot"></span><span id="stxt"></span></div>
+</aside>
+<main>
+<section class="view on" id="install">
+ <div class="top"><h1 data-t="Install apps">Install apps</h1><button class="btn pri" id="addph">＋ <span data-t="Add phone">Add phone</span></button></div>
+ <div class="card" style="padding:10px">
+  <div class="drop" id="drop"><span class="ic">⬇️</span><br><b data-t="Drop an APK here, or click to choose one">Drop an APK here, or click to choose one</b><small data-t="Ctrl+O also opens the file chooser">Ctrl+O also opens the file chooser</small></div>
+  <div id="apks"></div>
+ </div>
+ <div class="tools">
+  <b data-t="Phones">Phones</b>
+  <div class="seg" id="flt"><button class="on" data-f="all" data-t="All">All</button><button data-f="usb" data-t="USB only">USB only</button><button data-f="wifi" data-t="Wi-Fi only">Wi-Fi only</button></div>
+  <button class="btn" id="selall" data-t="Select all">Select all</button><button class="btn" id="selnone" data-t="None">None</button>
+  <span class="sp" style="flex:1"></span>
+  <button class="btn" id="refresh"><span class="ri" style="display:inline-block">🔄</span> <span data-t="Refresh">Refresh</span></button>
+ </div>
+ <div class="card"><div class="phead"><span></span><span data-t="Phone (Model / Serial)">Phone (Model / Serial)</span><span data-t="Connection">Connection</span><span data-t="Installed version">Installed version</span><span data-t="Plan">Plan</span><span data-t="Status">Status</span></div><div id="plist"></div></div>
+ <div class="detail" id="detail" style="display:none"><span id="dtxt"></span><button class="btn sm" id="dcopy" data-t="Copy error">Copy error</button></div>
+ <div class="runbar"><button class="btn pri go" id="go" data-t="Install">Install</button><button class="btn dng" id="cancel" style="display:none" data-t="Cancel">Cancel</button>
+  <div class="grow"><div class="bar" id="pbar"><i></i></div><small id="ptxt" style="color:var(--mute)"></small></div></div>
+ <div class="msg" id="msg"></div>
+ <div class="res" id="res"></div>
+ <details class="card" id="optd"><summary data-t="Install options">Install options</summary>
+  <div class="opts" id="opts"></div>
+  <div class="opts" style="padding-bottom:16px"><button class="btn" id="b-restart" data-t="Restart ADB">Restart ADB</button><button class="btn" id="b-fix" data-t="Fix problems">Fix problems</button><button class="btn" id="b-csv" data-t="CSV Export">CSV Export</button><button class="btn" id="b-reset" data-t="Reset auto-install list">Reset auto-install list</button></div>
+ </details>
+</section>
+
+<section class="view" id="apps">
+ <div class="top"><h1 data-t="Apps on phone">Apps on phone</h1><button class="btn" id="a-refresh"><span class="ri" style="display:inline-block">🔄</span> <span data-t="Refresh">Refresh</span></button><button class="btn pri" id="a-load" data-t="Load apps">Load apps</button></div>
+ <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><b data-t="Phone">Phone</b><select id="a-phone" style="flex:1;min-width:260px"></select></div>
+ <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+  <div class="seg" id="a-scope"><button class="on" data-s="user" data-t="User apps">User apps</button><button data-s="system" data-t="System apps">System apps</button><button data-s="disabled" data-t="Disabled">Disabled</button><button data-s="all" data-t="All">All</button></div>
+  <input type="text" id="a-search" data-tp="Search:" placeholder="Search:" style="flex:1;min-width:160px">
+  <button class="btn" id="a-all" data-t="Select all">Select all</button><button class="btn dng" id="a-un" data-t="Uninstall">Uninstall</button><button class="btn" id="a-clear" data-t="Clear data">Clear data</button>
+ </div>
+ <div class="sub" id="a-count" style="margin-bottom:6px"></div>
+ <div class="card al" id="a-list"></div>
+</section>
+
+<section class="view" id="conn">
+ <div class="top"><h1 data-t="Connection">Connection</h1><button class="btn" id="c-dis" data-t="Disconnect all">Disconnect all</button><button class="btn" id="c-saved" data-t="Reconnect saved phones">Reconnect saved phones</button><button class="btn" id="c-find" data-t="Find phones">Find phones</button></div>
+ <div class="card" style="margin-bottom:16px"><div style="padding:12px 16px;font-weight:700" data-t="Phones">Phones</div><div id="c-rows"></div></div>
+ <div class="gt" data-t="Add a phone: pick a way">Add a phone: pick a way</div>
+ <div class="wgrid">
+  <div class="card cardm" tabindex="0" data-m="usb"><div class="e">🔌</div><b data-t="USB cable">USB cable</b><small data-t="Fastest and simplest">Fastest and simplest</small></div>
+  <div class="card cardm" tabindex="0" data-m="qr"><div class="e">🔳</div><b data-t="QR code">QR code</b><small data-t="Android 11+, same Wi-Fi">Android 11+, same Wi-Fi</small></div>
+  <div class="card cardm" tabindex="0" data-m="code"><div class="e">🔢</div><b data-t="Pairing code">Pairing code</b><small data-t="Wireless debugging">Wireless debugging</small></div>
+  <div class="card cardm" tabindex="0" data-m="tcp"><div class="e">📶</div><b data-t="USB → Wi-Fi">USB → Wi-Fi</b><small data-t="Then unplug the cable">Then unplug the cable</small></div>
+ </div>
+ <div class="card" id="proc" style="margin-top:16px;padding:18px;display:none"></div>
+</section>
+
+<section class="view" id="log">
+ <div class="top"><h1 data-t="Log">Log</h1><button class="btn" id="l-copy" data-t="Copy log">Copy log</button><button class="btn" id="l-clear" data-t="Clear log">Clear log</button></div>
+ <div class="term" id="term"></div>
+</section>
+
+<section class="view" id="settings"><div class="top"><h1 data-t="Settings">Settings</h1></div><div id="sbody"></div></section>
+
+<section class="view" id="setup">
+ <div class="top"><h1 data-t="ADB not found">ADB not found</h1></div>
+ <p style="max-width:680px" data-t="Google's platform-tools (adb) is needed to install apps on phones. Press the button below to download it automatically (internet needed). Or, if you already have adb.exe, choose it.">Google's platform-tools (adb) is needed.</p>
+ <div style="display:flex;gap:10px;margin:14px 0"><button class="btn pri go" id="s-dl" data-t="Download ADB automatically">Download ADB automatically</button><button class="btn" id="s-browse" data-t="Browse adb.exe">Browse adb.exe</button></div>
+ <div class="bar" id="s-bar" style="max-width:680px"><i></i></div><div class="sub" id="s-txt" style="margin-top:6px"></div>
+</section>
+</main>
+</div>
+
+<div class="lp" id="lp"><div class="lph"><i class="live"></i><span class="t" id="lpt"></span><button id="lp-full"></button><button id="lp-copy"></button><button id="lp-min">–</button><button id="lp-x">✕</button></div><div class="lpb" id="lpb"></div></div>
+<div class="ov" id="ov"><div class="mod" id="mod"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+let S=null,BN={},BR=[],lang='en',api=null,page='install',filt='all',last={},known=new Set(),detailKey='',lastFinish=0,wasBusy=false;
+let appKey='',appScope='user',appPkgs=[],appSel=new Set(),method='',tcpKey='';
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function t(k,p){let s=(lang==='bn'&&BN[k])||k;if(p)s=s.replace(/\{(\w+)(?::[^}]*)?\}/g,(m,n)=>p[n]!==undefined?p[n]:m);return s}
+function once(name,val,fn){const j=JSON.stringify(val);if(last[name]===j)return;last[name]=j;fn()}
+function call(n,...a){try{const r=api[n](...a);if(r&&r.catch)r.catch(e=>toast(String(e),'bad'));return r}catch(e){toast(String(e),'bad')}}
+
+/* ---------- small UI helpers ---------- */
+let toastT;
+function toast(text,kind){const e=$('#toast');e.textContent=text;e.className='toast on '+(kind||'');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('on'),2600)}
+function beep(kind){if(!S||!S.opts.sound)return;try{const c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=kind==='bad'?220:kind==='auto'?1000:660;g.gain.value=.08;o.start();o.stop(c.currentTime+(kind==='auto'?.15:.25))}catch(e){}}
+function modal(title,html,buttons){return new Promise(res=>{const ov=$('#ov');$('#mod').innerHTML='<h3>'+esc(title)+'</h3><div class="body">'+html+'</div><div class="acts"></div>';const acts=$('#mod .acts');
+ const done=v=>{ov.classList.remove('on');document.removeEventListener('keydown',kd);res(v)};const kd=e=>{if(e.key==='Escape')done(null)};document.addEventListener('keydown',kd);
+ buttons.forEach(b=>{const x=document.createElement('button');x.className='btn '+(b.kind||'');x.textContent=b.t;x.onclick=()=>done(b.v);acts.appendChild(x)});ov.classList.add('on');const f=acts.querySelector('.pri')||acts.lastChild;if(f)f.focus()})}
+const confirmBox=(title,text)=>modal(title,esc(text),[{t:t('Cancel'),v:false},{t:'OK',v:true,kind:'pri'}]);
+async function promptBox(title,text){const v=await modal(title,esc(text)+'<br><br><input type="text" id="pin" style="width:100%">',[{t:t('Cancel'),v:null},{t:'OK',v:'ok',kind:'pri'}]);return v==='ok'?$('#pin').value:null}
+function spin(btn){const s=btn.querySelector('.ri');if(!s)return;s.style.transition='transform .7s';s.style.transform='rotate('+((s._r=(s._r||0)+360))+'deg)'}
+
+/* ---------- language / theme ---------- */
+function applyLang(){document.documentElement.lang=lang;$$('[data-t]').forEach(e=>e.textContent=t(e.dataset.t));$$('[data-tp]').forEach(e=>e.placeholder=t(e.dataset.tp));
+ $('#lp-full').textContent=t('Full log');$('#lp-copy').textContent=t('Copy')}
+
+/* ---------- navigation ---------- */
+function show(v){page=v;$$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));const target=(S&&!S.adb_ok&&v!=='settings')?'setup':v;$$('.view').forEach(x=>x.classList.toggle('on',x.id===target))}
+$$('#nav button').forEach(b=>b.onclick=()=>show(b.dataset.v));
+$('#addph').onclick=()=>show('conn');
+$('#themebtn').onclick=()=>call('set_option','theme',S.opts.theme==='dark'?'light':'dark');
+
+/* ---------- render ---------- */
+function render(){
+ document.body.classList.toggle('noanim',!S.opts.animations);
+ document.documentElement.dataset.theme=S.opts.theme;
+ if(lang!==S.opts.lang){lang=S.opts.lang;applyLang();last={}}
+ show(page);renderSide();renderSetup();renderApks();renderPhones();renderRun();renderOpts();renderApps();renderConn();renderSettings();popupLogic()}
+function renderSide(){const n=S.devices.filter(d=>d.usable).length;$('#sdot').className='dot'+(!S.adb_ok?' off':n?'':' idle');$('#stxt').textContent=S.adb_ok?t('ADB ready · {n} phones',{n}):t('ADB not found')}
+function renderSetup(){once('setup',S.dl,()=>{const p=S.dl.total?S.dl.got*100/S.dl.total:0;$('#s-bar').firstChild.style.width=p+'%';$('#s-txt').textContent=S.dl.total?t('Downloading: {got:.1f} / {total:.1f} MB',S.dl):''})}
+function renderApks(){once('apks',[S.apks,lang],()=>{$('#apks').innerHTML=S.apks.map(a=>`<div class="apk"><div class="ib">APK</div><div><b>${esc(a.name)}${a.split?' [split]':''}</b><br><small>${esc(a.package||t('unknown package'))} · versionName ${esc(a.vname||'?')} · versionCode ${esc(a.vcode==null?'?':a.vcode)}</small></div><span class="x" data-p="${esc(a.path)}">✕</span></div>`).join('')})}
+$('#apks').onclick=e=>{const x=e.target.closest('.x');if(x)call('remove_apk',x.dataset.p)};
+const SL={waiting:'Waiting',checking:'Checking',installing:'Installing',success:'Success',failed:'Failed',skipped:'Skipped',sig:'Signature mismatch',older:'APK older (Skipped)'};
+const planT=p=>{const m=/^(.*?)( \(\+\d+\))?$/.exec(p);return t(m[1])+(m[2]||'')};
+function renderPhones(){
+ const rows=S.devices.filter(d=>filt==='all'||(filt==='usb'&&d.conn==='USB')||(filt==='wifi'&&d.conn==='Wi-Fi'));
+ once('phones',[rows,filt,lang],()=>{const box=$('#plist');
+  if(!rows.length){box.innerHTML=`<div class="empty"><div class="e">📱</div><div>${esc(t('No phone yet. Add one to start.'))}</div><br><button class="btn pri" id="e-add">＋ ${esc(t('Add phone'))}</button></div>`;$('#e-add').onclick=()=>show('conn');return}
+  box.innerHTML=rows.map(d=>{const isNew=!known.has(d.key);let st='';
+   if(!d.usable)st=d.reason;else if(d.code){st=t(SL[d.code])+(d.detail?' — '+(d.detail.length>80?d.detail.slice(0,80)+'…':d.detail):'')}
+   const col=!d.usable?'var(--warn)':'var(--'+d.color+')';
+   return `<div class="phone${isNew?' new':''}" data-k="${esc(d.key)}"><div class="cb ${d.checked?'on':d.usable?'':'x'}">${d.checked?'✓':d.usable?'':'✕'}</div>
+   <div><div class="nm">${esc(d.model)}</div><div class="sub">${esc(d.serial)}</div></div>
+   <div><span class="tag${d.conn==='Wi-Fi'?' w':''}">${esc(d.conn)}${d.wifi_too?' (+Wi-Fi)':''}</span></div>
+   <div>${d.installed==='Not installed'?esc(t('Not installed')):esc(d.installed)}</div><div>${esc(planT(d.plan))}</div>
+   <div><div class="st" style="color:${col}">${d.busy?'<span class="sp-i"></span>':''}${d.color==='ok'?'✔ ':''}${esc(st)}</div>${d.busy?'<div class="mini"><i></i></div>':''}</div></div>`}).join('');
+  rows.forEach(d=>known.add(d.key))});
+ renderDetail()}
+$('#plist').onclick=e=>{const r=e.target.closest('.phone');if(!r)return;detailKey=r.dataset.k;call('toggle_check',r.dataset.k)};
+function renderDetail(){const d=S.devices.find(x=>x.key===detailKey);const txt=d?(d.detail||(d.usable?'':d.reason)):'';$('#detail').style.display=txt?'flex':'none';$('#dtxt').textContent=txt;$('#dcopy').style.display=d&&d.has_raw?'':'none'}
+$('#dcopy').onclick=async()=>{const r=await api.raw_error(detailKey);navigator.clipboard.writeText(r||'');toast(t('Copied'))};
+$$('#flt button').forEach(b=>b.onclick=()=>{filt=b.dataset.f;$$('#flt button').forEach(x=>x.classList.toggle('on',x===b));last.phones='';if(S)renderPhones()});
+$('#selall').onclick=()=>call('select_all',S.devices.map(d=>d.key));$('#selnone').onclick=()=>call('select_none');
+$('#refresh').onclick=e=>{spin(e.currentTarget);call('refresh_all')};
+function renderRun(){
+ const p=S.progress,pct=p.total?p.done*100/p.total:0,bar=$('#pbar');bar.firstChild.style.width=pct+'%';bar.className='bar'+(p.running?' run':(pct>=100?' done':''));
+ $('#ptxt').textContent=t('{done} / {total} done',{done:p.done,total:p.total});
+ $('#go').classList.toggle('dis',S.busy);$('#cancel').style.display=S.busy?'':'none';
+ const m=$('#msg');m.className='msg '+S.msg.kind;once('msg',[S.msg,lang],()=>{m.textContent=t(S.msg.key,S.msg.params)});
+ once('res',[S.fail_n,S.sig,S.older,S.has_history,S.busy,lang],()=>{const r=$('#res');r.innerHTML='';if(S.busy)return;
+  const add=(txt,fn)=>{const b=document.createElement('button');b.className='btn';b.textContent=txt;b.onclick=fn;r.appendChild(b)};
+  if(S.fail_n)add(t('Retry failed'),()=>call('retry_failed'));
+  if(S.sig.length)add(t('Uninstall old and retry'),async()=>{if(await confirmBox(t('Confirm'),t('App: {pkgs}\nPhones:\n{names}\n\nThe old app will be uninstalled and the new one installed.\nWarning: all data of this app will be erased!\n\nContinue?',{pkgs:S.sig_pkgs.join(', '),names:S.sig.map(x=>'  • '+x).join('\n')})))call('retry_signature')});
+  if(S.older.length)add(t('Try downgrade (-r -d)'),async()=>{if(await confirmBox(t('Downgrade'),t('Phones:\n{names}\n\nWill try to install the older version with -r -d.\nNote: Android usually allows downgrade only for debuggable apps, so this may fail.\nThen you must Uninstall and install the older version, which erases the app data.\n\nTry it?',{names:S.older.map(x=>'  • '+x).join('\n')})))call('retry_downgrade')});
+  if(S.has_history)add(t('CSV Export'),()=>call('export_csv'))})}
+async function doInstall(){const r=await api.install();if(r&&r.need_pkg){const n=await promptBox(t('Package name'),t('Enter the package name of {name} (for example com.example.app):',{name:r.name}));if(n&&n.trim()){await api.set_package(r.need_pkg,n.trim());doInstall()}}}
+$('#go').onclick=doInstall;$('#cancel').onclick=()=>call('cancel');
+$('#drop').onclick=()=>call('pick_apks');
+['dragenter','dragover'].forEach(ev=>window.addEventListener(ev,e=>{e.preventDefault();$('#drop').classList.add('drag')}));
+['dragleave','drop'].forEach(ev=>window.addEventListener(ev,e=>{e.preventDefault();$('#drop').classList.remove('drag')}));
+function tgl(k,on,txt){return `<div class="opt"><button class="tg${on?' on':''}" data-k="${k}" aria-label="${esc(txt)}"></button><span>${esc(txt)}</span></div>`}
+function renderOpts(){const o=S.opts;once('opts',[o.grant,o.force,o.auto,o.open_after,o.workers,lang],()=>{
+ $('#opts').innerHTML=tgl('grant',o.grant,t('Grant all permissions (-g)'))+tgl('force',o.force,t('Force reinstall'))+tgl('auto',o.auto,t('Auto-install on new phones'))+tgl('open_after',o.open_after,t('Open the app after install'))+
+ `<div class="opt"><span>${esc(t('Phones at once (1-10):'))}</span><input type="number" min="1" max="10" id="wk" value="${o.workers}"></div>`;
+ $('#wk').onchange=e=>call('set_option','workers',e.target.value)});
+ once('cmd',S.cmd,()=>{$('#cmdp').textContent=S.cmd})}
+$('#opts').insertAdjacentHTML('afterend','<div class="opts" style="padding-top:0"><span class="sub">'+'</span><code class="mono" id="cmdp" style="color:var(--mute);word-break:break-all"></code></div>');
+$('#opts').onclick=e=>{const b=e.target.closest('.tg');if(b)call('set_option',b.dataset.k,!S.opts[b.dataset.k])};
+$('#b-restart').onclick=()=>call('restart_adb');$('#b-fix').onclick=()=>call('fix_problems');$('#b-csv').onclick=()=>call('export_csv');$('#b-reset').onclick=()=>call('reset_handled');
+
+/* ---------- Apps page ---------- */
+function renderApps(){
+ const phones=S.devices.filter(d=>d.usable);
+ once('aph',[phones.map(d=>[d.key,d.model,d.conn,d.serial]),lang],()=>{const sel=$('#a-phone');if(!phones.find(d=>d.key===appKey)){const c=phones.find(d=>d.checked)||phones[0];appKey=c?c.key:''}
+  sel.innerHTML=phones.map(d=>`<option value="${esc(d.key)}"${d.key===appKey?' selected':''}>${esc(d.model)} · ${esc(d.conn)} · ${esc(d.serial)}</option>`).join('')})}
+$('#a-phone').onchange=e=>{appKey=e.target.value;loadApps()};
+function loadApps(){if(!appKey){toast(t('No phone found. Add a phone first.'),'bad');return}call('load_apps',appKey,appScope)}
+$('#a-load').onclick=loadApps;$('#a-refresh').onclick=e=>{spin(e.currentTarget);call('refresh_all');if(appKey)loadApps()};
+$$('#a-scope button').forEach(b=>b.onclick=()=>{appScope=b.dataset.s;$$('#a-scope button').forEach(x=>x.classList.toggle('on',x===b));if(appKey)loadApps()});
+$('#a-search').oninput=renderAppList;
+function renderAppList(){const q=$('#a-search').value.trim().toLowerCase(),list=appPkgs.filter(p=>p.toLowerCase().includes(q));
+ $('#a-list').innerHTML=list.map(p=>`<div class="it" data-p="${esc(p)}"><div class="cb ${appSel.has(p)?'on':''}">${appSel.has(p)?'✓':''}</div><span class="mono" style="font-size:13px">${esc(p)}</span></div>`).join('');
+ $('#a-count').textContent=t('Showing {a} / total {b}',{a:list.length,b:appPkgs.length})}
+$('#a-list').onclick=e=>{const r=e.target.closest('.it');if(!r)return;const p=r.dataset.p;appSel.has(p)?appSel.delete(p):appSel.add(p);renderAppList()};
+$('#a-all').onclick=()=>{const q=$('#a-search').value.trim().toLowerCase();appPkgs.filter(p=>p.toLowerCase().includes(q)).forEach(p=>appSel.add(p));renderAppList()};
+async function appAction(kind){const pkgs=[...appSel];if(!pkgs.length){toast(t('Load the apps first, then select one or more apps.'),'bad');return}
+ const d=S.devices.find(x=>x.key===appKey);if(!d)return;const system=appScope==='system'||appScope==='disabled',verb=t(kind==='uninstall'?'Uninstall':'Clear data');
+ if(kind==='clear'||system||S.opts.confirm_uninstall){let warn=t('Warning: all data of the app will be erased!');
+  if(system&&kind==='uninstall')warn=t('Warning: these are system apps. Removing the wrong app can break calls, network or settings on the phone.\nThe app is removed for the current user only; a factory reset brings it back.');
+  const shown=pkgs.slice(0,12).map(p=>'  • '+p).join('\n')+(pkgs.length>12?'\n  '+t('... and {n} more',{n:pkgs.length-12}):'');
+  if(!await confirmBox(t('Confirm'),t('{verb} - {n} app(s)\nPhone: {phone} ({serial})\n\n{shown}\n\n{warn}\n\nContinue?',{verb,n:pkgs.length,phone:d.model,serial:d.serial,shown,warn})))return}
+ call('app_action',appKey,appScope,kind,pkgs)}
+$('#a-un').onclick=()=>appAction('uninstall');$('#a-clear').onclick=()=>appAction('clear');
+
+/* ---------- Connection page ---------- */
+function renderConn(){once('crows',[S.devices,S.saved_offline,lang],()=>{
+ const r=S.devices.map(d=>`<div class="crow"><span class="cdot${d.usable?'':' bad'}"></span><div><b>${esc(d.model)}</b> <span class="tag${d.conn==='Wi-Fi'?' w':''}">${esc(d.conn)}</span><br><span class="sub">${esc(d.serial)}</span></div><span style="flex:1"></span><b style="color:var(--${d.usable?'ok':'bad'});text-align:right">${d.usable?esc(t('Connected ✔')):esc(d.reason)}</b>${d.usable&&d.conn==='Wi-Fi'?`<button class="btn sm" data-dis="${esc(d.serial)}">${esc(t('Disconnect'))}</button>`:''}</div>`).concat(
+  S.saved_offline.map(p=>`<div class="crow"><span class="cdot bad"></span><div><b>${esc(p.name)}</b> <span class="tag w">Wi-Fi</span><br><span class="sub">${esc(p.addr)}</span></div><span style="flex:1"></span><b style="color:var(--bad)">${esc(t('Offline'))}</b><button class="btn pri sm" data-rec="${esc(p.addr)}">${esc(t('Reconnect'))}</button></div>`));
+ $('#c-rows').innerHTML=r.length?r.join(''):`<div class="empty">${esc(t('No phone is connected yet. Pick a way below.'))}</div>`});
+ if(method==='usb')usbUpdate();if(method==='tcp')tcpRefresh()}
+$('#c-rows').onclick=e=>{const d=e.target.closest('[data-dis]'),r=e.target.closest('[data-rec]');if(d)call('disconnect',d.dataset.dis);if(r){toast(t('Connecting')+'…');call('reconnect',r.dataset.rec)}};
+$('#c-find').onclick=()=>call('conn_task','find');$('#c-saved').onclick=()=>call('conn_task','saved');$('#c-dis').onclick=()=>call('conn_task','disconnect_all');
+function mkSteps(list){return `<div id="csteps">${list.map((x,i)=>`<div class="step pending" id="cs${i}" data-st="pending"><span class="si">○</span><div>${esc(x)}</div></div>`).join('')}</div>`}
+function setStep(i,st){const e=$('#cs'+i);if(!e||e.dataset.st===st)return;e.dataset.st=st;e.className='step '+st;e.querySelector('.si').textContent={pending:'○',info:'●',done:'✔',fail:'✖',active:''}[st]}
+function say(text,kind){const b=$('#banner');if(!b)return;b.className='banner '+kind;b.textContent=text;b.style.display=text?'':'none'}
+function head(title,sub){return `<div style="font-size:16px;font-weight:700">${esc(title)}</div><div class="sub" style="margin:2px 0 10px">${esc(sub)}</div>`}
+function openMethod(m){method=m;$$('.cardm').forEach(c=>c.classList.toggle('on',c.dataset.m===m));call('pair_stop');const p=$('#proc');p.style.display='block';
+ if(m==='usb'){p.innerHTML=head(t('Connect with a USB cable'),t('Each step turns green by itself when it is done.'))+mkSteps([t('Turn on Developer options (Settings > About phone > tap Build number 7 times)'),t('Turn ON USB debugging'),t('Connect the phone to the PC with a cable'),t('Tap Allow on the phone screen'),t('Phone found')])+'<div class="banner info" id="banner"></div>';usbUpdate()}
+ if(m==='qr'){p.innerHTML=head(t('Connect with a QR code (Wi-Fi)'),t('The PC and the phone must be on the same Wi-Fi. Android 11 or newer.'))+mkSteps([t('Phone: Settings > Developer options > Wireless debugging > turn ON'),t('Tap "Pair device with QR code" on the phone'),t('Create the QR code here'),t('Scan the QR code with the phone'),t('Pairing and connecting')])+'<button class="btn pri" id="qrbtn"></button><div id="qrbox"></div><div class="banner info" id="banner" style="display:none"></div>';
+  $('#qrbtn').textContent=t('Create QR code');setStep(0,'info');setStep(1,'info');
+  if(S.missing_pkgs.length){setStep(2,'fail');$('#qrbtn').style.display='none';say(t('To enable QR pairing, install: ')+'pip install '+S.missing_pkgs.join(' '),'bad')}
+  $('#qrbtn').onclick=async()=>{const r=await api.pair_qr();if(!r.ok){setStep(2,'fail');say(t('Could not create the QR: {err}',{err:r.err}),'bad');return}
+   $('#qrbox').innerHTML='<div class="qr"><img src="'+r.img+'"></div>';setStep(2,'done');setStep(3,'active');window._qp=3;say(t('Waiting for the QR scan... (60 seconds)'),'info')}}
+ if(m==='code'){p.innerHTML=head(t('Connect with a pairing code (Wi-Fi)'),t('Phone: Wireless debugging > "Pair device with pairing code". Type the IP:PORT and the 6-digit code it shows.'))+mkSteps([t('Wireless debugging is ON (same Wi-Fi as this PC)'),t('Tap "Pair device with pairing code"'),t('Pair: enter the IP:PORT and the 6-digit code'),t('Connect: enter the IP:PORT from the main Wireless debugging screen')])+
+  `<div class="frm"><span>${esc(t('Pair IP:PORT'))}</span><input type="text" id="pa"><span></span><span>${esc(t('6-digit code'))}</span><input type="password" id="pc"><button class="btn pri" id="pbtn">${esc(t('Pair'))}</button><span>${esc(t('Connect IP:PORT'))}</span><input type="text" id="ca"><button class="btn pri" id="cbtn">${esc(t('Connect'))}</button></div><div class="banner info" id="banner" style="display:none"></div>`;
+  setStep(0,'info');setStep(1,'info');setStep(2,'info');
+  $('#pbtn').onclick=()=>{const a=$('#pa').value.trim(),c=$('#pc').value.trim();$('#pc').value='';if(!a||!c){say(t('Enter both the IP:PORT and the code.'),'bad');return}setStep(2,'active');say(t('Pairing...'),'info');call('pair',a,c)};
+  $('#cbtn').onclick=()=>{const a=$('#ca').value.trim();if(!a){say(t('Enter the Connect IP:PORT.'),'bad');return}setStep(3,'active');say(t('Connecting...'),'info');call('connect',a)}}
+ if(m==='tcp'){p.innerHTML=head(t('Switch a USB phone to Wi-Fi'),t('The phone must be plugged in with the cable and be on the same Wi-Fi as this PC.'))+mkSteps([t('Keep the USB cable plugged in'),t("Read the phone's Wi-Fi address"),t('Switch the phone to Wi-Fi mode (tcpip 5555)'),t('Connect over Wi-Fi'),t('You can unplug the cable now')])+
+  `<div style="display:flex;gap:10px;align-items:center;margin:8px 0"><span>${esc(t('Phone'))}</span><select id="tsel" style="min-width:280px"></select><button class="btn pri" id="tgo">${esc(t('Start'))}</button></div><div class="banner info" id="banner" style="display:none"></div>`;
+  setStep(0,'info');$('#tsel').onchange=e=>tcpKey=e.target.value;
+  $('#tgo').onclick=()=>{const k=$('#tsel').value;if(!k){say(t('Plug in a phone with a USB cable first.'),'bad');return}for(let i=1;i<5;i++)setStep(i,'pending');setStep(0,'done');say(t('Working...'),'info');call('tcp_start',k)};tcpRefresh()}
+ setTimeout(()=>p.scrollIntoView({behavior:'smooth',block:'nearest'}),60)}
+$$('.cardm').forEach(c=>{c.onclick=()=>openMethod(c.dataset.m);c.onkeydown=e=>{if(e.key==='Enter')openMethod(c.dataset.m)}});
+function usbUpdate(){if(!$('#cs0'))return;const usb=S.devices.filter(d=>d.conn==='USB'),st=new Set(usb.map(d=>d.state));
+ if(!usb.length){setStep(0,'info');setStep(1,'info');setStep(2,'active');setStep(3,'pending');setStep(4,'pending');say(t('Waiting for a phone... (checks every 3 seconds)'),'info');return}
+ [0,1,2].forEach(i=>setStep(i,'done'));
+ if(st.has('device')){setStep(3,'done');setStep(4,'done');say(t('Phone found ✔'),'ok')}
+ else if(st.has('unauthorized')){setStep(3,'active');setStep(4,'pending');say(t('Tap Allow on the phone screen'),'bad')}
+ else if(st.has('offline')){setStep(3,'fail');setStep(4,'pending');say(t('Phone is offline - unplug and replug the cable, then press Fix problems'),'bad')}
+ else{setStep(3,'active');setStep(4,'pending');say(usb[0].reason||t('Waiting for the phone...'),'bad')}}
+function tcpRefresh(){const sel=$('#tsel');if(!sel)return;const u=S.devices.filter(d=>d.usable&&d.conn==='USB');
+ once('tsel',u.map(d=>d.key),()=>{if(!u.find(d=>d.key===tcpKey))tcpKey=u[0]?u[0].key:'';sel.innerHTML=u.map(d=>`<option value="${esc(d.key)}"${d.key===tcpKey?' selected':''}>${esc(d.model)} · ${esc(d.serial)}</option>`).join('')})}
+
+/* ---------- settings page ---------- */
+const SET=[['Look and sound',[['theme','seg',[['light','Light'],['dark','Dark']],'Theme','Light or dark window'],['lang','seg',[['en','English'],['bn','বাংলা']],'Language','English or Bangla'],['animations','tog','','Animations','Turn off on a slow PC'],['sound','tog','','Sound after each phone','A beep when a phone or a batch is done']]],
+['Install',[['grant','tog','','Grant all permissions','Adds -g to the install command'],['wake_screen','tog','','Wake the screen first','Many phones refuse installs while the screen is locked'],['stay_awake','tog','','Keep the phone awake while plugged in','Stops the screen from sleeping during the install. Restored after the batch.'],['skip_verifier','tog','','Skip the Play Protect scan for adb installs','Removes the extra popup. Switched back on after the batch.'],['retry_once','tog','','Retry failed phones once','Automatic second try after a batch'],['open_after','tog','','Open the app after install','Starts the app on the phone when the install succeeds'],['timeout','num',[30,900,30],'Install timeout (seconds)','Stop one stuck install after this time'],['workers','num',[1,10,1],'Phones at once (1-10)',''],['log_popup','tog','','Show a small log window while installing',''],['front_when_done','tog','','Bring the window forward when a batch ends',''],['auto_csv','tog','','Save a CSV report after every batch','Saved in the reports folder next to the app']]],
+['Phones and files',[['reconnect_saved','tog','','Reconnect saved Wi-Fi phones at start',''],['remember_dir','tog','','Remember the last APK folder',''],['confirm_uninstall','tog','','Ask before uninstalling apps','System apps always ask']]]];
+function renderSettings(){once('set',[S.opts,lang],()=>{const o=S.opts;let h='';
+ SET.forEach(([g,rows])=>{h+=`<div class="gt">${esc(t(g))}</div><div class="card grp">`+rows.map(([k,ty,ex,title,sub])=>{let c='';
+  if(ty==='tog')c=`<button class="tg${o[k]?' on':''}" data-k="${k}"></button>`;
+  if(ty==='seg')c=`<div class="seg" data-k="${k}">${ex.map(([v,l])=>`<button data-v="${v}" class="${o[k]===v?'on':''}">${esc(['Light','Dark'].includes(l)?t(l):l)}</button>`).join('')}</div>`;
+  if(ty==='num')c=`<input type="number" data-k="${k}" min="${ex[0]}" max="${ex[1]}" step="${ex[2]}" value="${o[k]}">`;
+  return `<div class="row"><div><p>${esc(t(title))}</p>${sub?`<small>${esc(t(sub))}</small>`:''}</div>${c}</div>`}).join('')+'</div>'});
+ h+=`<div class="gt">ADB</div><div class="card grp"><div class="row"><div><p>${esc(t('ADB path'))}</p><small class="mono">${esc(o.adb_path||t('not set'))}</small></div><button class="btn" id="chg">${esc(t('Change adb.exe'))}</button></div></div><div style="height:24px"></div>`;
+ $('#sbody').innerHTML=h;$('#chg').onclick=()=>call('browse_adb')})}
+$('#sbody').onclick=e=>{const b=e.target.closest('.tg'),s=e.target.closest('.seg button');if(b)call('set_option',b.dataset.k,!S.opts[b.dataset.k]);if(s)call('set_option',s.parentElement.dataset.k,s.dataset.v)};
+$('#sbody').onchange=e=>{const i=e.target.closest('input[type=number]');if(i)call('set_option',i.dataset.k,i.value)};
+
+/* ---------- log + popup ---------- */
+function addLog(x){const d=document.createElement('div');d.className=x.tag||'';d.textContent=x.text;const term=$('#term');term.appendChild(d);while(term.childNodes.length>2000)term.removeChild(term.firstChild);term.scrollTop=1e9;
+ if($('#lp').classList.contains('on')){const p=d.cloneNode(true);$('#lpb').appendChild(p);$('#lpb').scrollTop=1e9}}
+$('#l-copy').onclick=()=>{navigator.clipboard.writeText($('#term').innerText);toast(t('Copied'))};$('#l-clear').onclick=()=>{$('#term').innerHTML=''};
+function popupLogic(){const lp=$('#lp');
+ if(S.busy&&!wasBusy&&S.opts.log_popup){$('#lpb').innerHTML='';$('#lpt').textContent=t('Installing...');lp.className='lp on';}
+ wasBusy=S.busy;
+ if(S.finish.n!==lastFinish){lastFinish=S.finish.n;if(lp.classList.contains('on')){lp.classList.add('fin');if(S.finish.bad)lp.classList.add('bad');$('#lpt').textContent=S.finish.bad?t('Finished with {n} problem(s)',{n:S.finish.bad}):t('Finished ✔')}}}
+$('#lp-x').onclick=()=>$('#lp').classList.remove('on');$('#lp-min').onclick=()=>$('#lp').classList.toggle('min');
+$('#lp-full').onclick=()=>show('log');$('#lp-copy').onclick=()=>{navigator.clipboard.writeText($('#lpb').innerText);toast(t('Copied'))};
+
+/* ---------- setup + keys ---------- */
+$('#s-dl').onclick=()=>{$('#s-txt').textContent=t('Downloading...');call('download_adb')};$('#s-browse').onclick=()=>call('browse_adb');
+document.addEventListener('keydown',e=>{if(e.key==='F5'){e.preventDefault();call('refresh_all')}if(e.ctrlKey&&e.key==='o'){e.preventDefault();call('pick_apks')}if(e.ctrlKey&&e.key==='Enter')doInstall()});
+
+/* ---------- events from Python ---------- */
+function brandModal(brand){const sel=BR.map(b=>`<option value="${b.key}"${b.key===brand?' selected':''}>${esc(b.name)}</option>`).join('');
+ modal(t('Phone setup help'),`<b>${esc(t('Brand:'))}</b> <select id="bsel">${sel}</select><ol id="bsteps"></ol>`,[{t:'OK',v:1,kind:'pri'}]);
+ const fill=()=>{const b=BR.find(x=>x.key===$('#bsel').value)||BR[0];$('#bsteps').innerHTML=(lang==='bn'?b.steps_bn:b.steps).map(s=>'<li>'+esc(s)+'</li>').join('')};$('#bsel').onchange=fill;fill()}
+window.bb={on(name,d){
+ if(name==='state'){S=d;render()}
+ else if(name==='log')addLog(d);
+ else if(name==='toast')toast(t(d.key,d.params),d.kind);
+ else if(name==='toast_raw')toast(d.text,d.kind);
+ else if(name==='beep')beep(d.kind);
+ else if(name==='apps'){appPkgs=d.pkgs;appSel.clear();renderAppList()}
+ else if(name==='apps_done'){d.removed.forEach(p=>{appPkgs=appPkgs.filter(x=>x!==p);appSel.delete(p)});renderAppList()}
+ else if(name==='ask_split')confirmBox(t('Split APK?'),t('{pkg} has {n} files.\nAre these split APKs of the same app? (adb install-multiple will be used)',d)).then(v=>call('set_split',d.pkg,!!v));
+ else if(name==='alert'){const list=(d.list||[]).map(x=>x==='x'?x:esc(x.replace('NOT_CONNECTED',t('not connected - Wireless debugging ON? Same Wi-Fi? AP isolation off on the router? If needed, pair again from Add phone.')))).join('\n');
+  modal(t(d.title),esc(d.body?t(d.body):'')+'\n'+(list||esc(d.empty?t(d.empty):''))+(d.foot?'\n\n'+esc(t(d.foot)):''),[{t:'OK',v:1,kind:'pri'}])}
+ else if(name==='brand_help')brandModal(d.brand);
+ else if(name==='pair'&&method==='qr'){if(d.kind==='status'){if(window._qp===3){setStep(3,'done');setStep(4,'active');window._qp=4}say(d.text,'info')}
+  else if(d.kind==='ok'){setStep(3,'done');setStep(4,'done');say(d.text,'ok');$('#qrbox').innerHTML='';toast(t('Phone connected'),'ok')}
+  else{const a=[3,4].find(i=>$('#cs'+i)&&$('#cs'+i).dataset.st==='active');setStep(a==null?3:a,'fail');say(d.text,'bad');$('#qrbox').innerHTML='<button class="btn" id="tocode"></button>';$('#tocode').textContent=t('Use the pairing code method');$('#tocode').onclick=()=>openMethod('code')}}
+ else if(name==='pair_result'&&method==='code'){setStep(2,d.ok?'done':'fail');if(d.ok)setStep(3,'info');say(d.ok?t('Pairing successful. Now enter the Connect IP:PORT and press Connect.'):t('Pairing failed: {err}',{err:d.text}),d.ok?'ok':'bad')}
+ else if(name==='connect_result'&&method==='code'){setStep(3,d.ok?'done':'fail');say(d.ok?t('Connected ✔'):t('Connect failed: {err}',{err:d.text}),d.ok?'ok':'bad')}
+ else if(name==='tcp_step'&&method==='tcp'){if(d.step>0||d.state!=='fail')setStep(d.step,d.state);if(d.msg)say(t(d.msg,d.params),d.state==='fail'?'bad':d.state==='done'?'ok':'info')}
+}};
+window.addEventListener('pywebviewready',async()=>{api=window.pywebview.api;const b=await api.boot();BN=b.bn;BR=b.brands;S=b.state;lang='';lastFinish=S.finish.n;b.log.forEach(addLog);render()});
+</script>
+</body>
+</html>

@@ -1,10 +1,9 @@
-# The app itself needs only the Python standard library.
-# Everything below is OPTIONAL (the app starts and works without them).
-tkinterdnd2      # drag and drop of APK files
-pyaxmlparser     # read APK package name / version
-zeroconf         # QR pairing (mDNS)
-qrcode           # QR pairing (draw the QR code)
-Pillow           # QR pairing (show the QR image)
+pywebview>=5.3     # the window (needs Edge WebView2, already inside Windows 10/11)
+# Optional (the app starts without them):
+pyaxmlparser       # read APK package name / version
+zeroconf           # QR pairing (mDNS)
+qrcode             # QR pairing (draw the QR code)
+Pillow             # QR pairing (make the QR image)
 
 # Only needed to build the exe:
 pyinstaller

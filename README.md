@@ -1,65 +1,44 @@
 # BANG BANG ADB (Windows)
 
-Install Android apps (.apk) on one or many phones from a Windows PC, using ADB.
-Works over USB cable and over Wi-Fi. One single window: **no Simple/Advanced split any more**.
-Languages: **English and বাংলা** (Settings > Language).
+Install Android apps (.apk) on one or many phones from a Windows PC, using ADB. USB cable and Wi-Fi.
+One single window (no Simple/Advanced). English and বাংলা (Settings > Language). Light and dark theme.
 
-## Pages (left sidebar)
+The window is a web page (`web/index.html`) shown by **pywebview**, so the design is exactly the demo
+(rounded cards, shadows, smooth animations). All logic is Python.
+
+## Pages
 | Page | What it does |
 |---|---|
-| Install | Choose APK, tick phones, press Install. Install options are folded under the list. Refresh button, live log popup, retry buttons |
-| Apps | Choose a phone in the dropdown (USB or Wi-Fi), load User/System/Disabled/All apps, search, Uninstall or Clear data |
-| Connection | Shows every phone (connected or offline). Pick USB / QR / pairing code / USB→Wi-Fi and follow the live steps |
-| Log | Full adb log with Copy and Clear |
-| Settings | Theme, language, animations, sound and all the install options below |
-
-## Settings
-Light/Dark theme, English/বাংলা, animations on/off, sound, grant permissions, wake the screen first,
-keep the phone awake (restored after), skip the Play Protect scan (restored after), retry failed phones once,
-open the app after install, install timeout, phones at once, small log popup, bring window forward when done,
-CSV report after every batch, reconnect saved Wi-Fi phones at start, remember last APK folder, confirm before uninstall.
+| Install | Choose/drop an APK, tick phones, Install. Refresh, live log popup, retry buttons, install options |
+| Apps | Phone dropdown (USB or Wi-Fi), User/System/Disabled/All, search, Uninstall, Clear data |
+| Connection | Connected/offline phones + USB, QR, pairing code, USB→Wi-Fi with live steps |
+| Log | adb log |
+| Settings | Theme, language, animations, sound, wake screen, keep awake, Play Protect skip, auto retry, timeout, ... |
 
 ## Files
 | File | What it does |
 |---|---|
-| app.py | Start here. Run `python app.py` |
-| ui.py | The window: sidebar, Install/Apps/Log/Settings pages, install logic |
-| connection.py | Connection page (phone status + step-by-step connect flows) |
-| widgets.py | Colours (light/dark), buttons, toggle, progress bar, toast, animations |
-| i18n.py | Bangla translations (`T("English text")`). Add new texts here |
-| help_window.py, help_text.py | Brand setup help (English and Bangla) |
-| adb_client.py, devices.py, pairing.py, installer.py | adb calls, phone discovery, QR pairing, installs (unchanged engine) |
-| settings.py | Settings file |
-| requirements.txt, build.bat, .github/workflows/build.yml | Build helpers |
-
-Texts that come from adb itself or from the install engine (for example some error explanations) stay in English.
+| app.py | Start here. `python app.py` opens the window |
+| core.py | All logic (phones, install, retry, apps, connect). No window code |
+| web/index.html | The whole user interface (HTML + CSS + JavaScript) |
+| i18n.py | Bangla texts. Add a new English text and its Bangla here |
+| help_text.py | Phone-brand setup help (English + Bangla) |
+| adb_client.py, devices.py, pairing.py, installer.py, settings.py | adb engine (unchanged) |
 
 ## Run from source
-1. Install Python 3.10+ for Windows (tick "Add to PATH").
-2. `pip install -r requirements.txt` (all packages are optional except pyinstaller for building)
+1. Install Python 3.11 or 3.12 for Windows (tick "Add to PATH").
+2. `pip install -r requirements.txt`
 3. `python app.py`
 
-If adb is not found, the app shows a button to download Google's platform-tools for you.
-Use a font with Bangla support (Windows has Nirmala UI by default).
+Needs Microsoft Edge WebView2 (already in Windows 10/11; otherwise install the "Evergreen runtime" from Microsoft).
+If adb is not found, the app shows a button to download Google's platform-tools.
+Drag and drop of APK files needs pywebview 5 or newer; the click-to-choose box always works.
 
-## Build the exe on GitHub (no Python needed on your PC)
-1. Create a new GitHub repository and upload all these files (keep the `.github` folder).
-2. Open the **Actions** tab, choose **Build Windows exe**, press **Run workflow**.
-3. When it is green, open the run and download **BangBangADB-windows** (a zip with one file: BangBangADB.exe, adb is packed inside).
-4. Unzip anywhere and run BangBangADB.exe. On first start the packed adb is copied to `%LOCALAPPDATA%\BangBangADB\platform-tools`.
-
-## Build the exe on your own PC
-Run `build.bat`. It downloads platform-tools once (into `platform-tools/`) and packs it into the exe:
-
-    pyinstaller --onefile --noconsole --name BangBangADB --add-data "platform-tools;platform-tools" --collect-all tkinterdnd2 --collect-all pyaxmlparser --collect-all zeroconf --collect-all qrcode app.py
-
-`dist\BangBangADB.exe` is then a single file. adb search order: `platform-tools` folder next to the exe, adb packed inside the exe, PATH, saved path.
-If you build without `--add-data`, put the `platform-tools` folder next to the exe (or press "Download ADB automatically").
-settings.json is saved next to the exe, so use a folder you can write to.
+## Build the exe
+Run `build.bat`, or use the GitHub workflow (Actions > Build Windows exe > Run workflow).
+`dist\BangBangADB.exe` is one file; adb and the page are packed inside. settings.json is saved next to the exe.
 
 ## How to use
-1. Open **Connection** and follow the USB, QR or pairing-code steps (the page shows when the phone is connected).
-2. Go to **Install**, drop an APK on the window (or click the box).
-3. Tick the phones, press **Install**. A small log window shows what is happening.
-
-Auto-install: when switched on (Install options), only phones that appear AFTER that are installed automatically.
+1. Open **Connection** and follow the USB, QR or pairing-code steps.
+2. Go to **Install**, drop an APK (or click the box).
+3. Tick the phones, press **Install**.

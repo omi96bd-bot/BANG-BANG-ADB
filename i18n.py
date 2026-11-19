@@ -190,6 +190,7 @@ BN: dict[str, str] = {
     "tcpip failed: {err}": "tcpip ব্যর্থ: {err}",
     "Could not connect to {addr}. Check that the PC and phone are on the same Wi-Fi.": "{addr}-এ কানেক্ট করা যায়নি। পিসি আর ফোন একই Wi-Fi-তে আছে কিনা দেখুন।",
     "Connected over Wi-Fi: {addr}. You can unplug the cable now.": "Wi-Fi দিয়ে কানেক্ট হয়েছে: {addr}। এখন তার খুলতে পারেন।",
+    "English or Bangla": "English বা বাংলা",
     # help window
     "Phone setup help": "ফোন সেটআপ সাহায্য", "Brand:": "ব্র্যান্ড:",
 }
