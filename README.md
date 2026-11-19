@@ -1,22 +1,38 @@
 # BANG BANG ADB (Windows)
 
 Install Android apps (.apk) on one or many phones from a Windows PC, using ADB.
-Works over USB cable and over Wi-Fi. Has a **Simple** mode and an **Advanced** mode.
+Works over USB cable and over Wi-Fi. One single window: **no Simple/Advanced split any more**.
+Languages: **English and বাংলা** (Settings > Language).
+
+## Pages (left sidebar)
+| Page | What it does |
+|---|---|
+| Install | Choose APK, tick phones, press Install. Install options are folded under the list. Refresh button, live log popup, retry buttons |
+| Apps | Choose a phone in the dropdown (USB or Wi-Fi), load User/System/Disabled/All apps, search, Uninstall or Clear data |
+| Connection | Shows every phone (connected or offline). Pick USB / QR / pairing code / USB→Wi-Fi and follow the live steps |
+| Log | Full adb log with Copy and Clear |
+| Settings | Theme, language, animations, sound and all the install options below |
+
+## Settings
+Light/Dark theme, English/বাংলা, animations on/off, sound, grant permissions, wake the screen first,
+keep the phone awake (restored after), skip the Play Protect scan (restored after), retry failed phones once,
+open the app after install, install timeout, phones at once, small log popup, bring window forward when done,
+CSV report after every batch, reconnect saved Wi-Fi phones at start, remember last APK folder, confirm before uninstall.
 
 ## Files
 | File | What it does |
 |---|---|
 | app.py | Start here. Run `python app.py` |
-| ui.py | The window (Tkinter) |
-| wizard.py | "Add phone" wizard (USB / QR / pairing code) and brand help window |
-| adb_client.py | All adb calls and output parsing, adb download |
-| devices.py | Finds USB + Wi-Fi phones, merges duplicates, saved phones, scan |
-| pairing.py | QR pairing (mDNS) |
-| installer.py | APK info, version check, error help, parallel installs |
-| settings.py, help_text.py | Settings file and English help texts |
-
-Apps tab (Advanced mode): pick any connected phone, choose User/System/Disabled/All apps, search, multi-select and Uninstall or Clear data. System apps are removed with `pm uninstall --user 0` (current user only).
+| ui.py | The window: sidebar, Install/Apps/Log/Settings pages, install logic |
+| connection.py | Connection page (phone status + step-by-step connect flows) |
+| widgets.py | Colours (light/dark), buttons, toggle, progress bar, toast, animations |
+| i18n.py | Bangla translations (`T("English text")`). Add new texts here |
+| help_window.py, help_text.py | Brand setup help (English and Bangla) |
+| adb_client.py, devices.py, pairing.py, installer.py | adb calls, phone discovery, QR pairing, installs (unchanged engine) |
+| settings.py | Settings file |
 | requirements.txt, build.bat, .github/workflows/build.yml | Build helpers |
+
+Texts that come from adb itself or from the install engine (for example some error explanations) stay in English.
 
 ## Run from source
 1. Install Python 3.10+ for Windows (tick "Add to PATH").
@@ -24,6 +40,7 @@ Apps tab (Advanced mode): pick any connected phone, choose User/System/Disabled/
 3. `python app.py`
 
 If adb is not found, the app shows a button to download Google's platform-tools for you.
+Use a font with Bangla support (Windows has Nirmala UI by default).
 
 ## Build the exe on GitHub (no Python needed on your PC)
 1. Create a new GitHub repository and upload all these files (keep the `.github` folder).
@@ -41,33 +58,8 @@ If you build without `--add-data`, put the `platform-tools` folder next to the e
 settings.json is saved next to the exe, so use a folder you can write to.
 
 ## How to use
-1. Press **Add phone** and follow USB, QR or pairing code steps.
-2. Drop an APK on the window (or click the blue box).
-3. Tick the phones, press **Install**.
-Advanced mode adds options, command preview, Apps tab, Wireless tab, Log, CSV export, Auto-install.
+1. Open **Connection** and follow the USB, QR or pairing-code steps (the page shows when the phone is connected).
+2. Go to **Install**, drop an APK on the window (or click the box).
+3. Tick the phones, press **Install**. A small log window shows what is happening.
 
-Auto-install: when switched on, only phones that appear AFTER that are installed automatically.
-Use "Auto list reset" to make all connected phones count as new again.
-
-## 8 manual tests
-1. One USB phone: plug in, tap Allow, install an APK, see Success.
-2. One Wi-Fi phone via QR code (Android 11+, same Wi-Fi).
-3. One Wi-Fi phone via pairing code + connect IP:PORT.
-4. A USB phone moved to Wi-Fi with "Switch USB phone to Wi-Fi", then unplug the cable.
-5. USB and Wi-Fi phones together; the same phone on both shows as ONE row (USB).
-6. A phone that has an older version: plan shows "Update (-r)", result shows the new version.
-7. A phone with a different signature: row shows "Signature mismatch", then "Uninstall old and retry" (one warning).
-8. Auto-install ON with three phones plugged in one after another: each gets the green "Done - next phone" message and a beep.
-
-## Known limits (honest list)
-- The code was written and its logic (adb output parsing, merging, version plans, install jobs, error hints) was
-  tested only on Linux with a fake adb script. It was NOT run on Windows, with real phones, or with the real
-  Tkinter window (Tkinter was not available where it was written). Expect small fixes on first run.
-- QR pairing and mDNS (zeroconf) were not tested with a real phone. Firewalls, VPNs and routers with AP isolation can block it.
-- Two-line cells (model + serial) in the table rely on Tk showing line breaks; if your Tk does not, the cell shows one line.
-- Switch USB to Wi-Fi reads the phone's IP first and then runs `tcpip 5555` (safer order than the reverse).
-- .apks / .xapk / .aab bundles are not supported; extract them first.
-- Downgrade (-r -d) usually fails on release apps; Android allows it mainly for debuggable apps.
-- If neither pyaxmlparser nor aapt is available, the app cannot read APK info and asks you to type the package name (no version compare then).
-- Brand help steps are general; menu names change between phone software versions.
-- Some antivirus programs warn about PyInstaller one-file exes. Building yourself on GitHub is the safest.
+Auto-install: when switched on (Install options), only phones that appear AFTER that are installed automatically.

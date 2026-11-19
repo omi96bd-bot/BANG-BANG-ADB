@@ -24,7 +24,23 @@ class Settings:
         "workers": 5,
         "mode": "simple",
         "saved_phones": [],
-        "geometry": "1020x760",
+        "geometry": "1120x780",
+        "lang": "en",                 # en | bn
+        "theme": "light",             # light | dark
+        "animations": True,
+        "sound": True,
+        "wake_screen": True,          # wake the phone screen before installing
+        "stay_awake": False,          # keep the phone awake while plugged in (restored after the batch)
+        "skip_verifier": False,       # skip the Play Protect scan for adb installs (restored after the batch)
+        "retry_once": True,           # automatically retry failed phones one time
+        "timeout": 120,               # seconds before one install is stopped
+        "open_after": False,          # open the app after a successful install
+        "confirm_uninstall": True,    # ask before uninstalling user apps
+        "auto_csv": False,            # save a CSV report after every batch
+        "front_when_done": True,      # bring the window forward when a batch ends
+        "log_popup": True,            # small log window while installing
+        "reconnect_saved": True,      # reconnect saved Wi-Fi phones at start
+        "remember_dir": True,         # remember the last APK folder
     }
 
     def __init__(self) -> None:
